@@ -1,7 +1,15 @@
-import torch
+import torch 
 import torch.nn as nn
 
-def get_activation(name="silu", inplace=True):
+def get_activation(name: str ="silu", inplace: bool =True):
+    '''
+    Get an activation function given the name
+    Args:
+        name (str): name of desired activation function
+        inplace (bool): specify whether to the operation inplace or not
+    Returns
+        module (nn.Module): activation function requested
+    '''
     if name == "silu":
         module = nn.SiLU(inplace=inplace)
     elif name == "relu":
@@ -24,19 +32,14 @@ class BaseConv(nn.Module):
         bias (bool): add bias or not
         activation (str): name of activation function
     '''
-    def __init__(self, in_channels, out_channels, kernel_size, stride, groups=1, bias=False, activation='silu'):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, stride: int, groups:int =1, bias: bool =False, activation: str ='silu'):
+        super().__init__()
         padding = (kernel_size - 1) // 2 #same padding
-        self.conv = nn.Conv2d(in_channels=in_channels,
-                            out_channels=out_channels,
-                            kernel_size=kernel_size,
-                            stride=stride,
-                            padding=padding,
-                            groups=groups,
-                            bias=bias)
-        self.batchnorm = nn.BatchNorm2d(out_channels)
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, bias=bias)
+        self.batchnorm = nn.BatchNorm2d(out_channels, eps=0.001, momentum=0.03)
         self.act = get_activation(activation, inplace=True)
 
-    def forward(self, x):
+    def forward(self, x: torch.tensor) -> torch.tensor:
         return self.act(self.batchnorm(self.conv(x)))
 
 class Residual(nn.Module):
@@ -45,11 +48,12 @@ class Residual(nn.Module):
     Args:
         in_channels (int): number of input channels
     '''
-    def __init__(self, in_channels):
+    def __init__(self, in_channels: int):
+        super().__init__()
         reduced_channels = in_channels // 2
         self.conv1 = BaseConv(in_channels, reduced_channels, kernel_size=1, stride=1, activation='lrelu')
         self.conv2 = BaseConv(reduced_channels, in_channels, kernel_size=3, stride=1, activation='lrelu')
 
-    def forward(self, x):
-        out = self.conv2(self.conv2(x))
+    def forward(self, x: torch.tensor) -> torch.tensor:
+        out = self.conv2(self.conv1(x))
         return x + out
