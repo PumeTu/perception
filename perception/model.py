@@ -39,6 +39,8 @@ class Darknet53(nn.Module):
             *[(Residual(in_channels*2)) for _ in range(num_blocks)]
         ]
 
+    def _build_spp_block(self, )
+
     def forward(self, x):
         outputs = {}
         x = self.c1(x)
