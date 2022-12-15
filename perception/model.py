@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from perception.layers import BaseConv, Residual
+from layers import BaseConv, Residual
 
 class Darknet53(nn.Module):
     '''
@@ -39,7 +39,12 @@ class Darknet53(nn.Module):
             *[(Residual(in_channels*2)) for _ in range(num_blocks)]
         ]
 
-    def _build_spp_block(self, )
+    def _build_spp_block(self):
+        '''
+        Build spatial pyramid pooling block
+        '''
+        pass
+
 
     def forward(self, x):
         outputs = {}

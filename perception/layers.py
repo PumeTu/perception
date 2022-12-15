@@ -57,3 +57,23 @@ class Residual(nn.Module):
     def forward(self, x: torch.tensor) -> torch.tensor:
         out = self.conv2(self.conv1(x))
         return x + out
+
+class SPPBlock(nn.Module):
+    '''
+    Spatial Pyramid Pooling block
+    '''
+    def __init__(self, in_channels: int, out_channels: int, kernel_sizes: tuple = (5, 9, 13), activation='silu'):
+        super().__init__()
+        reduced_channels = in_channels // 2
+        self.conv1 = BaseConv(in_channels, reduced_channels, kernel_size=1, stride=1, activation=activation)
+        self.maxpool = nn.Module([nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks//2) for ks in kernel_sizes])
+        expanded_channels = reduced_channels * (len(kernel_sizes) + 1)        
+        self.conv2 = BaseConv(expanded_channels, out_channels, kernel_size=1, stride=1, activation=activation)
+
+    def forward(self, x: torch.tensor) -> torch.tensor:
+        x = self.conv1(x)
+        x = torch.cat([x] + [m(x) for m in self.m], dim=1)
+        x = self.conv2(x)   
+        return x
+        
+        
