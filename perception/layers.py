@@ -59,9 +59,6 @@ class Residual(nn.Module):
         return x + out
 
 class SPPBlock(nn.Module):
-    '''
-    Spatial Pyramid Pooling block
-    '''
     def __init__(self, in_channels: int, out_channels: int, kernel_sizes: tuple = (5, 9, 13), activation='silu'):
         super().__init__()
         reduced_channels = in_channels // 2
