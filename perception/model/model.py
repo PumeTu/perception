@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from layers import BaseConv, Residual
+from .layers import BaseConv, Residual, SPPBlock
 
 class Darknet53(nn.Module):
     '''
@@ -28,7 +28,8 @@ class Darknet53(nn.Module):
             *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[2], stride=2))
         in_channels = in_channels * 2
         self.c5 = nn.Sequential(
-            *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[3], stride=2))
+            *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[3], stride=2),
+            *self._build_spp_block([in_channels, in_channels*2], in_channels*2))
 
     def _build_group_block(self, in_channels: int, num_blocks: int, stride: int):
         '''
@@ -39,12 +40,17 @@ class Darknet53(nn.Module):
             *[(Residual(in_channels*2)) for _ in range(num_blocks)]
         ]
 
-    def _build_spp_block(self):
+    def _build_spp_block(self, filter_list, in_channels):
         '''
         Build spatial pyramid pooling block
         '''
-        pass
-
+        return nn.Sequential(*[
+            BaseConv(in_channels, filter_list[0], kernel_size=1, stride=1, activation='lrelu'),
+            BaseConv(filter_list[0], filter_list[1], kernel_size=3, stride=1, activation='lrelu'),
+            SPPBlock(filter_list[1], filter_list[0], activation='lrelu'),
+            BaseConv(filter_list[0], filter_list[1], kernel_size=3, stride=1, activation='lrelu'),
+            BaseConv(filter_list[1], filter_list[0], kernel_size=1, stride=1, activation='lrelu'),
+        ])
 
     def forward(self, x):
         outputs = {}
@@ -60,15 +66,20 @@ class Darknet53(nn.Module):
         outputs['c5'] = x
         return {k:v for k, v in outputs.items() if k in self.output}
 
-class Perception(nn.Module):
+class FPN(nn.Module):
     '''
-    
+    Feature Pyramid Network
+        - merge shallow layers with deeper layers
+    Args:
+
     '''
     def __init__(self):
         pass
 
-    def forward(self):
+    def forward(self, ):
         pass
+
+
 
 darknet53 = Darknet53(in_channels=3, stem_out_channels=32)
 x = torch.randn(2, 3, 416, 416)
