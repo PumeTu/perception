@@ -79,6 +79,12 @@ class FPN(nn.Module):
     def forward(self, ):
         pass
 
+class YOLOHead(nn.Module):
+    def __init__(self):
+        pass
+
+    def forward(self, x):
+        pass
 
 
 darknet53 = Darknet53(in_channels=3, stem_out_channels=32)
