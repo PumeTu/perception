@@ -28,8 +28,7 @@ class Darknet53(nn.Module):
             *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[2], stride=2))
         in_channels = in_channels * 2
         self.c5 = nn.Sequential(
-            *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[3], stride=2),
-            *self._build_spp_block([in_channels, in_channels*2], in_channels*2))
+            *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[3], stride=2))
 
     def _build_group_block(self, in_channels: int, num_blocks: int, stride: int):
         '''
@@ -39,18 +38,6 @@ class Darknet53(nn.Module):
             BaseConv(in_channels, in_channels*2, kernel_size=3, stride=stride),
             *[(Residual(in_channels*2)) for _ in range(num_blocks)]
         ]
-
-    def _build_spp_block(self, filter_list, in_channels):
-        '''
-        Build spatial pyramid pooling block
-        '''
-        return nn.Sequential(*[
-            BaseConv(in_channels, filter_list[0], kernel_size=1, stride=1, activation='lrelu'),
-            BaseConv(filter_list[0], filter_list[1], kernel_size=3, stride=1, activation='lrelu'),
-            SPPBlock(filter_list[1], filter_list[0], activation='lrelu'),
-            BaseConv(filter_list[0], filter_list[1], kernel_size=3, stride=1, activation='lrelu'),
-            BaseConv(filter_list[1], filter_list[0], kernel_size=1, stride=1, activation='lrelu'),
-        ])
 
     def forward(self, x):
         outputs = {}
@@ -66,6 +53,19 @@ class Darknet53(nn.Module):
         outputs['c5'] = x
         return {k:v for k, v in outputs.items() if k in self.output}
 
+class SPP(nn.Module):
+    '''
+    Spatial Pyramid Pooling block
+
+    '''
+    def __init__(self, in_channels, ):
+        super().__init__()
+        self.spp = nn.Sequential()
+
+    def forward(self, x):
+        pass
+
+
 class FPN(nn.Module):
     '''
     Feature Pyramid Network
@@ -74,7 +74,8 @@ class FPN(nn.Module):
 
     '''
     def __init__(self):
-        pass
+        super().__init__()
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, ):
         pass
@@ -83,13 +84,6 @@ class YOLOHead(nn.Module):
     def __init__(self):
         pass
 
-    def forward(self, x):
+    def forward(self, c3, c4, c5):
         pass
 
-
-darknet53 = Darknet53(in_channels=3, stem_out_channels=32)
-x = torch.randn(2, 3, 416, 416)
-out = darknet53(x)
-print(f"c3: {out['c3'].shape}")
-print(f"c4 :{out['c4'].shape}")
-print(f"c5: {out['c5'].shape}")
