@@ -28,7 +28,9 @@ class Darknet53(nn.Module):
             *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[2], stride=2))
         in_channels = in_channels * 2
         self.c5 = nn.Sequential(
-            *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[3], stride=2))
+            *self._build_group_block(in_channels=in_channels, num_blocks=num_blocks[3], stride=2),
+            *self._build_spp_block(in_channels * 2, in_channels, in_channels * 2))
+
 
     def _build_group_block(self, in_channels: int, num_blocks: int, stride: int):
         '''
@@ -38,6 +40,17 @@ class Darknet53(nn.Module):
             BaseConv(in_channels, in_channels*2, kernel_size=3, stride=stride),
             *[(Residual(in_channels*2)) for _ in range(num_blocks)]
         ]
+
+    def _build_spp_block(self, in_channels: int, out_channels: int, hidden_channels: int):
+        return nn.Sequential(
+            *[
+                BaseConv(in_channels, out_channels, kernel_size=1, stride=1, activation='lrelu'),
+                BaseConv(out_channels, hidden_channels, kernel_size=3, stride=1, activation='lrelu'),
+                SPPBlock(in_channels=hidden_channels, out_channels=out_channels, activation='lrelu'),
+                BaseConv(out_channels, hidden_channels, kernel_size=3, stride=1, activation='lrelu'),
+                BaseConv(hidden_channels, out_channels, kernel_size=1, stride=1, activation='lrelu')
+            ]
+        )
 
     def forward(self, x):
         outputs = {}
