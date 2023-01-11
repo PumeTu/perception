@@ -21,10 +21,10 @@ class TestModel(unittest.TestCase):
         darknet = Darknet53(in_channels=3)
         outputs = darknet(x)
         fpn = FPN()
-        outputs = fpn(outputs)
-        self.assertTupleEqual(tuple(outputs['p3'].shape[1:4]), (in_channels * 2**(3+1), input_height / 2**3, input_width / 2**3))
-        self.assertTupleEqual(tuple(outputs['p4'].shape[1:4]), (in_channels * 2**(4+1), input_height / 2**4, input_width / 2**4))
-        self.assertTupleEqual(tuple(outputs['p5'].shape[1:4]), (in_channels * 2**5, input_height / 2**5, input_width / 2**5))
+        p3, p4, p5 = fpn(outputs)
+        self.assertTupleEqual(tuple(p3.shape[1:4]), (in_channels * 2**2, input_height / 2**3, input_width / 2**3))
+        self.assertTupleEqual(tuple(p4.shape[1:4]), (in_channels * 2**3, input_height / 2**4, input_width / 2**4))
+        self.assertTupleEqual(tuple(p5.shape[1:4]), (in_channels * 2**4, input_height / 2**5, input_width / 2**5))
 
     def test_yolo_head(self):
         pass

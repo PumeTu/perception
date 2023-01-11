@@ -3,13 +3,13 @@ import torch.nn as nn
 from ..layers import BaseConv, Residual, SPPBlock
 
 class Darknet53(nn.Module):
-    '''
+    """
     Base Darknet53 based on the YOLOv3 paper
     Args:
         in_channels (int): number of input channels
         stem_out_channels (int): number of output channels for first convolutional layer
         output (tuple): output layers to return
-    '''
+    """
     def __init__(self, in_channels: int, stem_out_channels: int = 32, output: tuple = ('c3', 'c4', 'c5')):
         super().__init__()
         self.output = output

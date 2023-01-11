@@ -11,15 +11,37 @@ def generate_proposals():
     pass
 
 class YOLOHead(nn.Module):
-    def __init__(self, in_channels, hidden_dim, num_anchors, num_classes):
-        super().__init__()
-        assert(num_classes != 0 and num_anchors != 0)
+    def __init__(self, in_channels: tuple = (128, 256, 512), num_classes: int = 20, anchors: tuple = ()):
         self.num_classes = num_classes
-        self.num_anchors = num_anchors
-        self.head = torch.nn.Sequential(
-            BaseConv(in_channels, hidden_dim, kernel_size=1, stride=1, activation='lrelu'),
-            BaseConv(hidden_dim, int(5 * num_anchors + num_classes), kernel_size=1, stirde=1, activation='lrelu')
-        )
+        self.num_outputs = num_classes + 5
+        self.anchors = anchors
+        self.num_anchors = len(anchors[0]) // 2
+        self.num_detections = len(anchors)
+        self.register_buffer('anchors', anchors)
+        self.register_buffer()
+        self.convs = nn.ModuleList(nn.Conv2d(in_channel, self.num_outputs * self.num_anchors, kernel_size=1) for in_channel in in_channels)
+
+    def foward(self, x):
+        """
+        Forward pass of the network to predict outputs given the three layers from the FPN
+        Note:
+            There are differnet outputs during training and inference
+            - During training we are given the index where the anchors contains object thus in the forward pass
+                we only return those with objects
+            - During inference we do not have the labels thus we return all predictions
+
+        Return (Training):
+            - 
+
+        Return (Inference):
+            - 
+        
+        """
+        for i in range(self.num_detections):
+            x[i] = self.convs[i](x[i])
+            bs, _, h, w = x[i].shape
+            x[i] = x[i].view(bs, self.num_anchors, self.num_outputs, h, w).permute(0, 1, 3, 4, 2).contiguous()
+
 
 
 
