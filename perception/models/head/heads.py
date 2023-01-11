@@ -4,51 +4,40 @@ from typing import Dict, List
 from ..layers import BaseConv
 from utils.utils import iou
 
-def generate_anchors():
-    pass
-
-def generate_proposals():
-    pass
-
 class YOLOHead(nn.Module):
-    def __init__(self, in_channels: tuple = (128, 256, 512), num_classes: int = 20, anchors: tuple = ()):
-        self.num_classes = num_classes
-        self.num_outputs = num_classes + 5
-        self.anchors = anchors
-        self.num_anchors = len(anchors[0]) // 2
-        self.num_detections = len(anchors)
-        self.register_buffer('anchors', anchors)
-        self.register_buffer()
-        self.convs = nn.ModuleList(nn.Conv2d(in_channel, self.num_outputs * self.num_anchors, kernel_size=1) for in_channel in in_channels)
-
-    def foward(self, x):
-        """
-        Forward pass of the network to predict outputs given the three layers from the FPN
-        Note:
-            There are differnet outputs during training and inference
-            - During training we are given the index where the anchors contains object thus in the forward pass
-                we only return those with objects
-            - During inference we do not have the labels thus we return all predictions
-
-        Return (Training):
-            - 
-
-        Return (Inference):
-            - 
-        
-        """
-        for i in range(self.num_detections):
-            x[i] = self.convs[i](x[i])
-            bs, _, h, w = x[i].shape
-            x[i] = x[i].view(bs, self.num_anchors, self.num_outputs, h, w).permute(0, 1, 3, 4, 2).contiguous()
-
-
-
+    def __init__(self, in_channels: tuple = (512, 256, 128), num_classes: int = 80, num_anchors: int = 3)       
+        super().__init__()
+        self.conv1 = nn.Sequential(
+            BaseConv(in_channels[0], 2 * in_channels[0], kernel_size=3, stride=1, activation='lrelu'),
+            nn.Conv2d(in_channels[0] * 2, num_anchors * (num_classes + 5), kernel_size=1, stride=1)
+        )
+        self.conv2 = nn.Sequential(
+            BaseConv(in_channels[1], 2 * in_channels[1], kernel_size=3, stride=1, activation='lrelu'),
+            nn.Conv2d(in_channels[1] * 2, num_anchors * (num_classes + 5), kernel_size=1, stride=1)
+        )
+        self.conv3 = nn.Sequential(
+            BaseConv(in_channels[2], 2 * in_channels[2], kernel_size=3, stride=1, activation='lrelu'),
+            nn.Conv2d(in_channels[2] * 2, num_anchors * (num_classes + 5), kernel_size=1, stride=1)
+        )
+    def forward(self, p5, p4, p3):
+        det1 = self.conv1(p5)
+        det2 = self.conv2(p4)
+        det3 = self.conv3(p3)
+        return det1, det2, det3
 
 class SegmentationHead(nn.Module):
-    def __init__(self):
+    def __init__(self, in_channels: int, num_classes: int):
         super().__init__()
+        self.m = nn.Sequential(
+            BaseConv(in_channels, in_channels / 2, kernel_size=3, stride=1, activation='lrelu'),
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            BaseConv(in_channels / 4, in_channels, in_channels / 8, kernel_size=3, stride=1, activation='lrelu'),
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            BaseConv(in_channels / 8, in_channels, in_channels / 16, kernel_size=3, stride=1, activation='lrelu'),
+            nn.Upsample(scale_factor=2, mode='nearest'), 
+            BaseConv(in_channels / 16, in_channels, num_classes, kernel_size=3, stride=1, activation='lrelu'),
+        )
 
     def forward(self, x):
-        pass
+        return self.m(x)
 
